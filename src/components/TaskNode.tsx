@@ -1,5 +1,6 @@
 import { Handle, Position, useNodeConnections, useNodesData, useReactFlow, type Node, type NodeProps} from '@xyflow/react';
 import { useState, useEffect } from 'react';
+import { timeToCertainty } from '../utils/lognormal';
 
 type TaskNode = Node<
     {title :string;
@@ -7,6 +8,7 @@ type TaskNode = Node<
     hours: number;
     isNew?: boolean
     lastInputtedECT?: number;
+    ectDist?: number[];
 }
     , 'task'>
 
@@ -28,6 +30,13 @@ const TaskNode = ({ data, selected, id }: NodeProps<TaskNode>) => {
             updateNodeData(id, {hours: data.lastInputtedECT})
         }
     }, [childrenData])
+
+    useEffect(() => {
+        if (data.hours) {
+            const mean = timeToCertainty(0.7, data.hours).toFixed(1);
+            updateNodeData(id, {ectDist: [mean]})
+        }
+    }, [data.hours])
 
       return (
     <div className={`task-node ${selected ? 'selected' : ''}`}>
@@ -80,7 +89,7 @@ const TaskNode = ({ data, selected, id }: NodeProps<TaskNode>) => {
           />
         ) : (
           <p className="task-hours" onClick={() => childrenConnections.length === 0 ? setIsEditingHours(true): null}>
-            {data.hours || "0"}h
+            {data.hours || "0"}h | <span style={{color: 'red'}}>{data.ectDist}</span> | 
           </p>
         )}
       </div>
