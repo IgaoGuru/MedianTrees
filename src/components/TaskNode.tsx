@@ -24,6 +24,8 @@ const TaskNode = ({ data, selected, id }: NodeProps<TaskNode>) => {
             const totalHours = childrenData.reduce((acc, child) => 
                 acc + child.data.hours, 0);
             updateNodeData(id, {hours: totalHours});
+        } else if (childrenData.length === 0 && data.lastInputtedECT) {
+            updateNodeData(id, {hours: data.lastInputtedECT})
         }
     }, [childrenData])
 

@@ -17,10 +17,14 @@ import {
   type OnNodeDrag,
   type NodeProps,
   type BuiltInNode,
+  useNodesData,
+  useUpdateNodeInternals,
+  useNodes,
+  useNodeConnections,
 } from '@xyflow/react';
 import ProjectModal from './ProjectModal';
 import ProjectNode from './ProjectNode';
-import TaskNode from './TaskNode';
+import TaskNodeComponent from './TaskNode';
 import ControlPanel from './ControlPanel';
 import { saveProject, getLatestProject } from '../utils/storage';
 
@@ -63,7 +67,7 @@ const TaskBoard = () => {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [selectedNodeId, setSelectedNode] = useState<string | null>(null);
 
-  const nodeTypes = useMemo(() => ({ project: ProjectNode, task: TaskNode }), []);
+  const nodeTypes = useMemo(() => ({ project: ProjectNode, task: TaskNodeComponent }), []);
 
   // load & save
   useEffect(() => {
@@ -94,14 +98,6 @@ const TaskBoard = () => {
     []
   );
 
-  const onNodeDrag = useCallback((event: React.MouseEvent, node: Node) => {
-    if (isProjectNode(node as CustomNode)) {
-      console.log('Project node dragged:', node.data);
-    } else if (isTaskNode(node as CustomNode)) {
-      console.log('Task node dragged:', node.data);
-    }
-  }, []);
-
   const onNodesDelete: OnNodesDelete = useCallback(
     (nodesToDelete) => {
       // Remove any edges connected to the deleted nodes
@@ -124,15 +120,42 @@ const TaskBoard = () => {
 
   // helpers
   const addNewEdge = useCallback(
-    (parent: CustomNode, child: CustomNode) => {
+    (parentId: string, childId: string) => {
+      console.log(`adding edge between ${parentId} and ${childId}`);
+      
+      // Get parent node data
+      const parent = nodes.find((n) => n.id === parentId);
+      console.log(`looking for parent`);
+      if (!parent) {
+        console.log(`parent not found`);
+        return;
+      }
+
+      console.log(`parent: ${JSON.stringify(parent, null, 2)}`);
+
+      // Get parent's children connections
+      const parentsChildren = edges.filter((e) => e.source === parentId);
+      console.log(`parents children: ${JSON.stringify(parentsChildren, null, 2)}`);
+
+      // If parent has no children, set child's hours to same as parent's
+      if (parentsChildren.length === 0 && isTaskNode(parent)) {
+        setNodes((nds) => nds.map((n) => 
+          n.id === childId 
+            ? { ...n, data: { ...n.data, hours: parent.data.hours } } 
+            : n
+        ));
+      }
+      
+      console.log(`parents children: ${JSON.stringify(parentsChildren, null, 2)}`);
+      
       setEdges((es) => [...es, { 
-        id: `${parent.id}-${child.id}`, 
-        source: parent.id, 
-        target: child.id, 
+        id: `${parentId}-${childId}`, 
+        source: parentId, 
+        target: childId, 
         type: 'smoothstep',
       }]);
     },
-    [setEdges]
+    [setNodes, setEdges]
   );
 
   const addNewNode = useCallback(
@@ -157,7 +180,7 @@ const TaskBoard = () => {
     });
 
       if (parent) {
-        addNewEdge(parent, newNode);
+        addNewEdge(parent.id, newNode.id);
       }
     },
     [nodes, selectedNodeId, addNewEdge, setNodes]
