@@ -1,102 +1,256 @@
 import { useCallback, useMemo, useEffect, useState } from 'react';
 import {
-    ReactFlow,
-    Background,
-    Controls,
-    MiniMap,
-    useNodesState,
-    useEdgesState,
-    type ColorMode,
-    addEdge,
-    type OnConnect,
-    type Node,
-    type Edge,
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  type Node,
+  type Edge,
+  addEdge,
+  type OnConnect,
+  type OnNodesDelete,
+  type OnEdgesDelete,
+  type NodeChange,
+  type EdgeChange,
+  type OnNodeDrag,
+  type NodeProps,
+  type BuiltInNode,
 } from '@xyflow/react';
 import ProjectModal from './ProjectModal';
 import ProjectNode from './ProjectNode';
+import TaskNode from './TaskNode';
 import ControlPanel from './ControlPanel';
 import { saveProject, getLatestProject } from '../utils/storage';
 
+// Node data types
 interface ProjectNodeData {
   title: string;
   description: string;
   [key: string]: unknown;
 }
 
-type ProjectNode = Node<ProjectNodeData>;
+interface TaskNodeData {
+  title: string;
+  description: string;
+  hours: number;
+  isNew?: boolean;
+  [key: string]: unknown;
+}
+
+// Node types
+type ProjectNode = Node<ProjectNodeData, 'project'>;
+type TaskNode = Node<TaskNodeData, 'task'>;
+type CustomNode = ProjectNode | TaskNode;
+
+// Type guards
+function isProjectNode(node: CustomNode): node is ProjectNode {
+  return node.type === 'project';
+}
+
+function isTaskNode(node: CustomNode): node is TaskNode {
+  return node.type === 'task';
+}
 
 const TaskBoard = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState<ProjectNode>([]);
+  // ReactFlow-managed state
+  const [nodes, setNodes, onNodesChange] = useNodesState<CustomNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  // UI state
   const [currentProjectName, setCurrentProjectName] = useState<string | null>(null);
   const [showProjectModal, setShowProjectModal] = useState(false);
+  const [selectedNodeId, setSelectedNode] = useState<string | null>(null);
 
-  const nodeTypes = useMemo(() => ({
-    project: ProjectNode,
-  }), []);
+  const nodeTypes = useMemo(() => ({ project: ProjectNode, task: TaskNode }), []);
 
-  // Load the latest project on mount
+  // load & save
   useEffect(() => {
-    const latestProject = getLatestProject();
-    if (latestProject) {
-      setNodes(latestProject.data.nodes as ProjectNode[]);
-      setEdges(latestProject.data.edges);
-      setCurrentProjectName(latestProject.name);
+    const project = getLatestProject();
+    if (project) {
+      setNodes(project.data.nodes as unknown as CustomNode[]);
+      setEdges(project.data.edges);
+      setCurrentProjectName(project.name);
+    }
+  }, [setNodes, setEdges]);
+
+  useEffect(() => {
+    if (currentProjectName && nodes.length) {
+      saveProject(currentProjectName, nodes as unknown as Node[], edges);
+    }
+  }, [currentProjectName, nodes, edges]);
+
+  // graph events
+  const onConnect: OnConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
+
+  const onSelectionChange = useCallback(
+    ({ nodes }: { nodes: Node[] }) => {
+      setSelectedNode(nodes.length ? nodes[0].id : null);
+    },
+    []
+  );
+
+  const onNodeDrag = useCallback((event: React.MouseEvent, node: Node) => {
+    if (isProjectNode(node as CustomNode)) {
+      console.log('Project node dragged:', node.data);
+    } else if (isTaskNode(node as CustomNode)) {
+      console.log('Task node dragged:', node.data);
     }
   }, []);
 
-  // Save project whenever nodes or edges change
-  useEffect(() => {
-    if (currentProjectName && nodes.length > 0) {
-      saveProject(currentProjectName, nodes, edges);
-    }
-  }, [nodes, edges, currentProjectName]);
-
-  const onConnect: OnConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
+  const onNodesDelete: OnNodesDelete = useCallback(
+    (nodesToDelete) => {
+      // Remove any edges connected to the deleted nodes
+      const nodeIds = nodesToDelete.map((node) => node.id);
+      setEdges((eds) => eds.filter((edge) => 
+        !nodeIds.includes(edge.source) && !nodeIds.includes(edge.target)
+      ));
+    },
+    [setEdges]
   );
 
-  const handleProjectCreate = (title: string, description: string) => {
-    const newNode: ProjectNode = {
-      id: '1',
-      type: 'project',
-      position: { x: 0, y: 0 },
-      data: { title, description },
+  const onEdgesDelete: OnEdgesDelete = useCallback(
+    (edgesToDelete) => {
+      setEdges((eds) => eds.filter((edge) => 
+        !edgesToDelete.some((e) => e.id === edge.id)
+      ));
+    },
+    [setEdges]
+  );
+
+  // helpers
+  const addNewEdge = useCallback(
+    (parent: CustomNode, child: CustomNode) => {
+      setEdges((es) => [...es, { 
+        id: `${parent.id}-${child.id}`, 
+        source: parent.id, 
+        target: child.id, 
+        type: 'smoothstep',
+      }]);
+    },
+    [setEdges]
+  );
+
+  const addNewNode = useCallback(
+    (newNode: CustomNode) => {
+      // determine position
+      let parent = null;
+      if (selectedNodeId) {
+        parent = nodes.find((n) => n.id === selectedNodeId);
+      }
+
+      if (parent) {
+        newNode.position = { 
+          x: getNodeMidpoint(parent), 
+          y: parent.position.y + 150 
+        };
+      }
+
+      // add node & edge
+      setNodes((nds) => {
+        console.log(`nodes after add: ${JSON.stringify([...nds, newNode], null, 2)}`);
+        return [...nds, newNode]
+    });
+
+      if (parent) {
+        addNewEdge(parent, newNode);
+      }
+    },
+    [nodes, selectedNodeId, addNewEdge, setNodes]
+  );
+
+  // project & task handlers
+  const handleProjectCreate = useCallback((title: string, description: string) => {
+    const projectNode: ProjectNode = { 
+      id: '1', 
+      type: 'project', 
+      position: { x: 0, y: 0 }, 
+      data: { 
+        title, 
+        description
+      } 
     };
-    setNodes([newNode]);
+    setNodes([projectNode]);
     setEdges([]);
     setCurrentProjectName(title);
     setShowProjectModal(false);
-  };
+  }, [setNodes, setEdges]);
 
-  const handleNewProject = () => {
+  const handleNewProject = useCallback(() => {
     setNodes([]);
     setEdges([]);
     setCurrentProjectName(null);
     setShowProjectModal(true);
-  };
+  }, [setNodes, setEdges]);
+
+  const handleNewTask = useCallback(() => {
+    const newNode: TaskNode = {
+      id: `task-${Date.now()}`,
+      type: 'task',
+      position: { x: 0, y: 0 },
+      data: { 
+        title: 'New Task', 
+        description: '', 
+        hours: 1,
+      },
+    };
+    addNewNode(newNode);
+  }, [addNewNode]);
+
+  // keybinding
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'n' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        e.preventDefault();
+        handleNewTask();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleNewTask]);
 
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      <ControlPanel onNewProject={handleNewProject} />
+      <ControlPanel onNewProject={handleNewProject} onNewTask={handleNewTask} />
       <ReactFlow
-        nodes={nodes}
+        nodes={nodes as unknown as Node[]}
         edges={edges}
-        onNodesChange={onNodesChange}
+        onNodesChange={onNodesChange as unknown as (changes: NodeChange[]) => void}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodesDelete={onNodesDelete}
+        onEdgesDelete={onEdgesDelete}
+        onSelectionChange={onSelectionChange}
         nodeTypes={nodeTypes}
-        colorMode="light"
         fitView
       >
         <MiniMap />
         <Background />
         <Controls />
       </ReactFlow>
-      {showProjectModal && <ProjectModal onSubmit={handleProjectCreate} onCancel={() => setShowProjectModal(false)} />}
+      {showProjectModal && (
+        <ProjectModal 
+          onSubmit={handleProjectCreate} 
+          onCancel={() => setShowProjectModal(false)} 
+        />
+      )}
     </div>
   );
 };
 
-export default TaskBoard; 
+export default TaskBoard;
+
+function getNodeMidpoint(parent: CustomNode): number {
+  const width = parent.measured?.width;
+  const pos = parent.position.x;
+
+  if (width && width > 234) {
+    return pos + (width / 2) - 117;
+  }
+  return pos;
+}
+

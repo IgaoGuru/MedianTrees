@@ -1,12 +1,16 @@
 interface ControlPanelProps {
   onNewProject: () => void;
+  onNewTask: () => void;
 }
 
-const ControlPanel = ({ onNewProject }: ControlPanelProps) => {
+const ControlPanel = ({ onNewProject, onNewTask }: ControlPanelProps) => {
   return (
     <div className="control-panel">
-      <button onClick={onNewProject} className="new-project-button">
+      <button onClick={onNewProject} className="control-button">
         New Project
+      </button>
+      <button onClick={onNewTask} className="control-button">
+        New Task
       </button>
     </div>
   );

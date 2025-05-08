@@ -1,15 +1,13 @@
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 
-interface ProjectNodeData {
+type ProjectNodeData = Node<{
   title: string;
   description: string;
-}
+  hours: number;
+  hasChildren: boolean;
+}, 'project'>
 
-interface ProjectNodeProps {
-  data: ProjectNodeData;
-}
-
-const ProjectNode = ({ data }: ProjectNodeProps) => {
+const ProjectNode = ({ data }: NodeProps<ProjectNodeData>) => {
   return (
     <div className="project-node">
       <div className="project-node-content">
@@ -17,6 +15,9 @@ const ProjectNode = ({ data }: ProjectNodeProps) => {
         {data.description && (
           <p className="project-description">{data.description}</p>
         )}
+        <p>
+          {data.hours}
+        </p>
       </div>
       <Handle type="source" position={Position.Bottom} />
     </div>
