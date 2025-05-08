@@ -125,7 +125,7 @@ const TaskBoard = () => {
       
       // Get parent node data
       const parent = nodes.find((n) => n.id === parentId);
-      console.log(`looking for parent`);
+      console.log(`looking for parent ${parentId}`);
       if (!parent) {
         console.log(`parent not found`);
         return;
@@ -155,7 +155,7 @@ const TaskBoard = () => {
         type: 'smoothstep',
       }]);
     },
-    [setNodes, setEdges]
+    [setNodes, setEdges, nodes]
   );
 
   const addNewNode = useCallback(
