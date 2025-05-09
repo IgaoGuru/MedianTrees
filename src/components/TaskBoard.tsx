@@ -28,6 +28,7 @@ import TaskNodeComponent from './TaskNode';
 import ControlPanel from './ControlPanel';
 import { saveProject, getLatestProject } from '../utils/storage';
 import { getLayoutedElements } from '../utils/layout';
+import { parseJiraCSV } from '../utils/jira';
 
 // Node data types
 interface ProjectNodeData {
@@ -47,7 +48,7 @@ interface TaskNodeData {
 // Node types
 type ProjectNode = Node<ProjectNodeData, 'project'>;
 type TaskNode = Node<TaskNodeData, 'task'>;
-type CustomNode = ProjectNode | TaskNode;
+export type CustomNode = ProjectNode | TaskNode;
 
 // Type guards
 function isProjectNode(node: CustomNode): node is ProjectNode {
@@ -246,12 +247,30 @@ const TaskBoard = () => {
     setEdges(layoutedEdges);
   }, [nodes, edges, setNodes, setEdges]);
 
+  const handleJiraImport = useCallback(async (file: File) => {
+    const text = await file.text();
+    const { nodes: jiraNodes, edges: jiraEdges } = parseJiraCSV(text);
+    
+    // Set the nodes and edges
+    setNodes(jiraNodes);
+    setEdges(jiraEdges);
+    
+    // Apply layout
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      jiraNodes as unknown as Node[],
+      jiraEdges
+    );
+    setNodes(layoutedNodes as unknown as CustomNode[]);
+    setEdges(layoutedEdges);
+  }, [setNodes, setEdges]);
+
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
       <ControlPanel 
         onNewProject={handleNewProject} 
         onNewTask={handleNewTask} 
         onLayout={handleLayout}
+        onJiraImport={handleJiraImport}
       />
       <ReactFlow
         nodes={nodes as unknown as Node[]}
