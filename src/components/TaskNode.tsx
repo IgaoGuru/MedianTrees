@@ -33,8 +33,12 @@ const TaskNode = ({ data, selected, id }: NodeProps<TaskNode>) => {
 
     useEffect(() => {
         if (data.hours) {
-            const mean = timeToCertainty(0.7, data.hours).toFixed(1);
-            updateNodeData(id, {ectDist: [mean]})
+            const mean = timeToCertainty(0.7, data.hours).toFixed(1) ;
+            const p95 = timeToCertainty(0.95, data.hours).toFixed(1);
+            const p99 = timeToCertainty(0.99, data.hours).toFixed(1);
+            console.log('disttt')
+            console.log(mean, p95, p99);
+            updateNodeData(id, {ectDist: [mean, p95, p99]})
         }
     }, [data.hours])
 
@@ -89,7 +93,7 @@ const TaskNode = ({ data, selected, id }: NodeProps<TaskNode>) => {
           />
         ) : (
           <p className="task-hours" onClick={() => childrenConnections.length === 0 ? setIsEditingHours(true): null}>
-            {data.hours || "0"}h | <span style={{color: 'red'}}>{data.ectDist}</span> | 
+            {data.hours || "0"}h | <span style={{color: 'red'}}>{data.ectDist?.[0]}</span> | <span style={{color: 'orange'}}>{data.ectDist?.[1]}</span> | <span style={{color: 'green'}}>{data.ectDist?.[2]}</span>
           </p>
         )}
       </div>
