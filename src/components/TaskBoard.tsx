@@ -26,6 +26,7 @@ import ProjectModal from './ProjectModal';
 import ProjectNode from './ProjectNode';
 import TaskNodeComponent from './TaskNode';
 import ControlPanel from './ControlPanel';
+import HelpModal from './HelpModal';
 import { saveProject, getLatestProject } from '../utils/storage';
 import { getLayoutedElements } from '../utils/layout';
 import { parseJiraCSV } from '../utils/jira';
@@ -68,6 +69,7 @@ const TaskBoard = () => {
   const [currentProjectName, setCurrentProjectName] = useState<string | null>(null);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [selectedNodeId, setSelectedNode] = useState<string | null>(null);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const nodeTypes = useMemo(() => ({ project: ProjectNode, task: TaskNodeComponent }), []);
 
@@ -78,6 +80,9 @@ const TaskBoard = () => {
       setNodes(project.data.nodes as unknown as CustomNode[]);
       setEdges(project.data.edges);
       setCurrentProjectName(project.name);
+    } else {
+      // Show help modal if no project exists
+      setShowHelpModal(true);
     }
   }, [setNodes, setEdges]);
 
@@ -272,6 +277,16 @@ const TaskBoard = () => {
         onLayout={handleLayout}
         onJiraImport={handleJiraImport}
       />
+      <button 
+        className="help-button" 
+        onClick={() => setShowHelpModal(true)}
+        title="Help"
+      >
+        ?
+      </button>
+      {showHelpModal && (
+        <HelpModal onClose={() => setShowHelpModal(false)} />
+      )}
       <ReactFlow
         nodes={nodes as unknown as Node[]}
         edges={edges}
@@ -294,6 +309,7 @@ const TaskBoard = () => {
           onCancel={() => setShowProjectModal(false)} 
         />
       )}
+
     </div>
   );
 };
