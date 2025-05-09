@@ -1,9 +1,10 @@
 interface ControlPanelProps {
   onNewProject: () => void;
   onNewTask: () => void;
+  onLayout: () => void;
 }
 
-const ControlPanel = ({ onNewProject, onNewTask }: ControlPanelProps) => {
+const ControlPanel = ({ onNewProject, onNewTask, onLayout }: ControlPanelProps) => {
   return (
     <div className="control-panel">
       <button onClick={onNewProject} className="control-button">
@@ -11,6 +12,9 @@ const ControlPanel = ({ onNewProject, onNewTask }: ControlPanelProps) => {
       </button>
       <button onClick={onNewTask} className="control-button">
         New Task
+      </button>
+      <button onClick={onLayout} className="control-button">
+        Layout Tree
       </button>
     </div>
   );

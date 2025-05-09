@@ -27,6 +27,7 @@ import ProjectNode from './ProjectNode';
 import TaskNodeComponent from './TaskNode';
 import ControlPanel from './ControlPanel';
 import { saveProject, getLatestProject } from '../utils/storage';
+import { getLayoutedElements } from '../utils/layout';
 
 // Node data types
 interface ProjectNodeData {
@@ -236,9 +237,22 @@ const TaskBoard = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [handleNewTask]);
 
+  const handleLayout = useCallback(() => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      nodes as unknown as Node[],
+      edges
+    );
+    setNodes(layoutedNodes as unknown as CustomNode[]);
+    setEdges(layoutedEdges);
+  }, [nodes, edges, setNodes, setEdges]);
+
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      <ControlPanel onNewProject={handleNewProject} onNewTask={handleNewTask} />
+      <ControlPanel 
+        onNewProject={handleNewProject} 
+        onNewTask={handleNewTask} 
+        onLayout={handleLayout}
+      />
       <ReactFlow
         nodes={nodes as unknown as Node[]}
         edges={edges}
