@@ -3,6 +3,13 @@
 MedianTrees is a web application for calculating *Estimated Completion Times* based on a recent [cool statistical study on developer time estimates](https://thesearesystems.substack.com/p/task-estimation-conquering-hofstadters?triedRedirect=true
 ).
 
+For each leaf task on the task tree, you must estimate the number of hours to completion. 
+MedianTrees will then display
+
+${\color{red}median\ time\ (what\ to\ tell\ your\ boss\ )}$ | ${\color{yellow}p=0.95\ (what\ to\ tell\ a\ stakeholder\ )}$ | ${\color{green}p=0.99\ (what\ to\ tell\ a\ really\ important\ stakeholder\ )}$
+
+like this 
+
 ## How to use
 
 You can input tasks by hand or import tasks from a Jira board. 
