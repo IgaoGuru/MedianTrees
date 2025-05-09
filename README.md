@@ -1,54 +1,45 @@
-# React + TypeScript + Vite
+# MedianTrees
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+MedianTrees is a web application for calculating *Estimated Completion Times* based on a recent [cool statistical study on developer time estimates](https://thesearesystems.substack.com/p/task-estimation-conquering-hofstadters?triedRedirect=true
+).
 
-Currently, two official plugins are available:
+## How to use
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+You can input tasks by hand or import tasks from a Jira board. 
+For Jira, export to csv with all attributes, then load the csv file with the `Load Jira` button
 
-## Expanding the ESLint configuration
+## 🚀 How 2 Build
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+### Prerequisites
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+*   [Node.js](https://nodejs.org/) (LTS version recommended, includes npm)
+*   [pnpm](https://pnpm.io/installation)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Installation
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone <your-repository-url> MedianTrees
+    cd MedianTrees
+    ```
+    *(Replace `<your-repository-url>` with the actual repository URL.)*
+
+2.  **Install dependencies:**
+    ```bash
+    pnpm i
+    ```
+
+3.  **Run the development server:**
+    ```bash
+    pnpm run dev
+    ```
+
+4.  Open your browser and navigate to `http://localhost:5173` (or the port specified in your console output).
+
+## 📄 License
+
+This project is under the GPLv3 CopyLeft License. Software here is free as in Libre.
+
+Special thanks to [ReactFlow](https://reactflow.dev/) and [DagreJS](https://github.com/dagrejs/dagre) for their amazing libraries that made this project possible.
